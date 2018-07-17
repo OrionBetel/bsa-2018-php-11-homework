@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Repository\Contracts;
+namespace App\Repository;
 
 use App\Entity\Currency;
 
