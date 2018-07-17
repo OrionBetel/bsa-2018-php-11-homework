@@ -6,7 +6,10 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 
 use App\Repository\Contracts\CurrencyRepository;
+use App\Repository\Contracts\UserRepository;
+
 use App\Repository\DatabaseCurrencyRepository;
+use App\Repository\DatabaseUserRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +33,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             CurrencyRepository::class,
             DatabaseCurrencyRepository::class
+        );
+
+        $this->app->bind(
+            UserRepository::class,
+            DatabaseUserRepository::class
         );
     }
 }
