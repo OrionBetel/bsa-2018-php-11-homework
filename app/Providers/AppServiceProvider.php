@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 
+use App\Repository\Contracts\CurrencyRepository;
+use App\Repository\DatabaseCurrencyRepository;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -24,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->bind(
+            CurrencyRepository::class,
+            DatabaseCurrencyRepository::class
+        );
     }
 }
