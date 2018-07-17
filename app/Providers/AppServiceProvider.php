@@ -55,5 +55,10 @@ class AppServiceProvider extends ServiceProvider
             MoneyRepository::class,
             DatabaseMoneyRepository::class
         );
+
+        $this->app->bind(
+            TradeRepository::class,
+            DatabaseTradeRepository::class
+        );
     }
 }
