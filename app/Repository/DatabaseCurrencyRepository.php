@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Currency;
+use App\Repository\Contracts\CurrencyRepository;
 
 class DatabaseCurrencyRepository implements CurrencyRepository
 {

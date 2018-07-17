@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\User;
+use App\Repository\Contracts\UserRepository;
 
 class DatabaseUserRepository implements UserRepository
 {

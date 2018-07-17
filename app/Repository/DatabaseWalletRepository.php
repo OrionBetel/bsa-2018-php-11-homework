@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Wallet;
+use App\Repository\Contracts\WalletRepository;
 
 class DatabaseWalletRepository implements WalletRepository
 {
