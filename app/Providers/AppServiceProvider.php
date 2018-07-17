@@ -9,11 +9,13 @@ use App\Repository\Contracts\CurrencyRepository;
 use App\Repository\Contracts\UserRepository;
 use App\Repository\Contracts\WalletRepository;
 use App\Repository\Contracts\MoneyRepository;
+use App\Repository\Contracts\TradeRepository;
 
 use App\Repository\DatabaseCurrencyRepository;
 use App\Repository\DatabaseUserRepository;
 use App\Repository\DatabaseWalletRepository;
 use App\Repository\DatabaseMoneyRepository;
+use App\Repository\DatabaseTradeRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
