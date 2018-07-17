@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\Schema;
 use App\Repository\Contracts\CurrencyRepository;
 use App\Repository\Contracts\UserRepository;
 use App\Repository\Contracts\WalletRepository;
+use App\Repository\Contracts\MoneyRepository;
 
 use App\Repository\DatabaseCurrencyRepository;
 use App\Repository\DatabaseUserRepository;
 use App\Repository\DatabaseWalletRepository;
+use App\Repository\DatabaseMoneyRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,6 +47,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             WalletRepository::class,
             DatabaseWalletRepository::class
+        );
+
+        $this->app->bind(
+            MoneyRepository::class,
+            DatabaseMoneyRepository::class
         );
     }
 }
