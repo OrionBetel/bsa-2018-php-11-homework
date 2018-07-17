@@ -7,9 +7,11 @@ use Illuminate\Support\Facades\Schema;
 
 use App\Repository\Contracts\CurrencyRepository;
 use App\Repository\Contracts\UserRepository;
+use App\Repository\Contracts\WalletRepository;
 
 use App\Repository\DatabaseCurrencyRepository;
 use App\Repository\DatabaseUserRepository;
+use App\Repository\DatabaseWalletRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +40,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             UserRepository::class,
             DatabaseUserRepository::class
+        );
+
+        $this->app->bind(
+            WalletRepository::class,
+            DatabaseWalletRepository::class
         );
     }
 }
