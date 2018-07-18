@@ -14,6 +14,7 @@ use App\Repository\Contracts\LotRepository;
 use App\Request\Contracts\AddCurrencyRequest;
 use App\Request\Contracts\CreateWalletRequest;
 use App\Request\Contracts\MoneyRequest;
+use App\Request\Contracts\BuyLotRequest;
 
 use App\Repository\DatabaseCurrencyRepository;
 use App\Repository\DatabaseUserRepository;
@@ -24,6 +25,7 @@ use App\Repository\DatabaseLotRepository;
 use App\Request\AddCurrency;
 use App\Request\CreateWallet;
 use App\Request\Money;
+use App\Request\BuyLot;
 
 class AppServiceProvider extends ServiceProvider
 {
