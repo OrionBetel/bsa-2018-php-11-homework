@@ -16,6 +16,7 @@ use App\Request\Contracts\CreateWalletRequest;
 use App\Request\Contracts\MoneyRequest;
 use App\Request\Contracts\BuyLotRequest;
 use App\Request\Contracts\AddLotRequest;
+use App\Service\Contracts\CurrencyService;
 
 use App\Repository\DatabaseCurrencyRepository;
 use App\Repository\DatabaseUserRepository;
@@ -28,6 +29,7 @@ use App\Request\CreateWallet;
 use App\Request\Money;
 use App\Request\BuyLot;
 use App\Request\AddLot;
+use App\Service\HandleCurrency;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -101,6 +103,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             AddLotRequest::class,
             AddLot::class
+        );
+
+        $this->app->bind(
+            CurrencyService::class,
+            HandleCurrency::class
         );
     }
 }
