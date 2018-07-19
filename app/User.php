@@ -2,6 +2,8 @@
 
 namespace App;
 
+use App\Entity\{ Wallet, Lot, Trade };
+
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -26,4 +28,19 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+    
+    public function lots()
+    {
+        $this->hasMany(Lot::class);
+    }
+
+    public function trades()
+    {
+        $this->hasMany(Trade::class);
+    }
 }

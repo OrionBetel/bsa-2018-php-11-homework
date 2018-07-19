@@ -120,7 +120,7 @@ class HandleMarket implements MarketService
             throw new BuyNegativeAmountException('You must buy at least one unit of currency.');
         }
 
-        if (now()->timestamp > $lot->date_time_close) {
+        if (now()->timestamp > $lot->getDateTimeClose()) {
             throw new BuyInactiveLotException('You cannot buy from a closed lot.');
         }
 
@@ -153,7 +153,13 @@ class HandleMarket implements MarketService
      */
     public function getLot(int $id) : LotResponse
     {
+        $lot = $this->lotRepo->getById($id);
 
+        if (is_null($lot)) {
+            throw new LotDoesNotExistException('The requested lot does not exists.');
+        }
+
+        return new LotResponse($lot);
     }
 
     /**
@@ -163,6 +169,12 @@ class HandleMarket implements MarketService
      */
     public function getLotList() : array
     {
+        $lots = [];
 
+        foreach ($this->lotRepo->findAll() as $lot) {
+            $lots[] = new LotResponse($lot);
+        }
+
+        return $lots;
     }
 }

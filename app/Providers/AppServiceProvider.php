@@ -13,7 +13,6 @@ use App\Repository\Contracts\{
     TradeRepository,
     LotRepository
 };
-
 use App\Repository\{
     DatabaseCurrencyRepository,
     DatabaseUserRepository,
@@ -23,7 +22,6 @@ use App\Repository\{
     DatabaseLotRepository
 };
 
-
 use App\Request\Contracts\{
     AddCurrencyRequest,
     CreateWalletRequest,
@@ -31,7 +29,6 @@ use App\Request\Contracts\{
     BuyLotRequest,
     AddLotRequest
 };
-
 use App\Request\{
     AddCurrency,
     CreateWallet,
@@ -40,19 +37,19 @@ use App\Request\{
     AddLot
 };
 
-
 use App\Service\Contracts\{
     CurrencyService,
     WalletService,
     MarketService
 };
-
 use App\Service\{
     HandleCurrency,
     HandleWallet,
     HandleMarket
 };
 
+use App\Response\Contracts\LotResponse;
+use App\Response\CustomLotResponse;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -141,6 +138,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             MarketService::class,
             HandleMarket::class
+        );
+
+        $this->app->bind(
+            LotResponse::class,
+            CustomLotResponse::class
         );
     }
 }
