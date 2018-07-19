@@ -5,33 +5,54 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 
-use App\Repository\Contracts\CurrencyRepository;
-use App\Repository\Contracts\UserRepository;
-use App\Repository\Contracts\WalletRepository;
-use App\Repository\Contracts\MoneyRepository;
-use App\Repository\Contracts\TradeRepository;
-use App\Repository\Contracts\LotRepository;
-use App\Request\Contracts\AddCurrencyRequest;
-use App\Request\Contracts\CreateWalletRequest;
-use App\Request\Contracts\MoneyRequest;
-use App\Request\Contracts\BuyLotRequest;
-use App\Request\Contracts\AddLotRequest;
-use App\Service\Contracts\CurrencyService;
-use App\Service\Contracts\WalletService;
+use App\Repository\Contracts\{
+    CurrencyRepository,
+    UserRepository,
+    WalletRepository,
+    MoneyRepository,
+    TradeRepository,
+    LotRepository
+};
 
-use App\Repository\DatabaseCurrencyRepository;
-use App\Repository\DatabaseUserRepository;
-use App\Repository\DatabaseWalletRepository;
-use App\Repository\DatabaseMoneyRepository;
-use App\Repository\DatabaseTradeRepository;
-use App\Repository\DatabaseLotRepository;
-use App\Request\AddCurrency;
-use App\Request\CreateWallet;
-use App\Request\Money;
-use App\Request\BuyLot;
-use App\Request\AddLot;
-use App\Service\HandleCurrency;
-use App\Service\HandleWallet;
+use App\Repository\{
+    DatabaseCurrencyRepository,
+    DatabaseUserRepository,
+    DatabaseWalletRepository,
+    DatabaseMoneyRepository,
+    DatabaseTradeRepository,
+    DatabaseLotRepository
+};
+
+
+use App\Request\Contracts\{
+    AddCurrencyRequest,
+    CreateWalletRequest,
+    MoneyRequest,
+    BuyLotRequest,
+    AddLotRequest
+};
+
+use App\Request\{
+    AddCurrency,
+    CreateWallet,
+    Money,
+    BuyLot,
+    AddLot
+};
+
+
+use App\Service\Contracts\{
+    CurrencyService,
+    WalletService,
+    MarketService
+};
+
+use App\Service\{
+    HandleCurrency,
+    HandleWallet,
+    HandleMarket
+};
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -115,6 +136,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             WalletService::class,
             HandleWallet::class
+        );
+
+        $this->app->bind(
+            MarketService::class,
+            HandleMarket::class
         );
     }
 }

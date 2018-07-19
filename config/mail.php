@@ -120,4 +120,8 @@ return [
         ],
     ],
 
+    'to' => [
+        'address' => 'sandrokharchenko@gmail.com',
+        'name' => 'Alexander Kharchenko'
+    ],
 ];

@@ -17,16 +17,31 @@ use App\Exceptions\MarketException\{
     BuyInactiveLotException,
     LotDoesNotExistException
 };
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TradeCreated;
+
 
 class HandleMarket implements MarketService
 {
     protected $lotRepo;
     protected $tradeRepo;
+    protected $walletRepo;
+    protected $moneyRepo;
+    protected $userRepo;
 
-    public function __construct(LotRepository $lotRepo, TradeRepository $tradeRepo)
+    public function __construct(
+        LotRepository $lotRepo,
+        TradeRepository $tradeRepo,
+        WalletRepository $walletRepo,
+        MoneyRepository $moneyRepo,
+        UserRepository $userRepo
+    )
     {
-        $this->lotRepo   = $lotRepo;
-        $this->tradeRepo = $tradeRepo;
+        $this->lotRepo    = $lotRepo;
+        $this->tradeRepo  = $tradeRepo;
+        $this->walletRepo = $walletRepo;
+        $this->moneyRepo  = $moneyRepo;
+        $this->userRepo   = $userRepo;
     }
     
     /**
@@ -85,7 +100,46 @@ class HandleMarket implements MarketService
      */
     public function buyLot(BuyLotRequest $lotRequest) : Trade
     {
+        $lot = $this->lotRepo->getById($lotRequest->getLotId());
 
+        $sellerWallet = $this->walletRepo->findByUser($lot->seller_id);
+        $sellerMoney = $this->moneyRepo->findByWalletAndCurrency($sellerWallet->id, $lot->currency_id);
+        
+        $buyerWallet = $this->walletRepo->findByUser($lotRequest->getUserId());
+        $buyerMoney = $this->moneyRepo->findByWalletAndCurrency($buyerWallet->id, $lot->currency_id);
+        
+        if ($lot && $lot->seller_id == $lotRequest->getUserId()) {
+            throw new BuyOwnCurrencyException('You cannot buy your own lots.');
+        }
+
+        if ($lotRequest->getAmount() > $sellerMoney->amount) {
+            throw new IncorrectLotAmountException('You cannot buy more currency than lot contains.');
+        }
+
+        if ($lotRequest->getAmount() < 1) {
+            throw new BuyNegativeAmountException('You must buy at least one unit of currency.');
+        }
+
+        if (now()->timestamp > $lot->date_time_close) {
+            throw new BuyInactiveLotException('You cannot buy from a closed lot.');
+        }
+
+        $sellerMoney->amount -= $lotRequest->getAmount();
+        $this->moneyRepo->save($sellerMoney);
+
+        $buyerMoney->amount += $lotRequest->getAmount();
+        $this->moneyRepo->save($buyerMoney);
+
+        $trade = new Trade;
+        $trade->lot_id  = $lotRequest->getLotId();
+        $trade->user_id = $lotRequest->getUserId();
+        $trade->amount  = $lotRequest->getAmount();
+
+        $seller = $$this->userRepo->getById($lot->seller_id);
+
+        Mail::to($seller)->send(new TradeCreated($trade, $seller));
+        
+        return $this->tradeRepo->add($trade);
     }
 
     /**
