@@ -2,18 +2,19 @@
 
 namespace App\Mail;
 
+use App\User;
 use App\Entity\Trade;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class TradeCreated extends Mailable implements ShouldQueue
+class TradeCreated extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $trade;
-    public $seller;
+    protected $trade;
+    protected $seller;
 
     /**
      * Create a new message instance.

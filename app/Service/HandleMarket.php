@@ -7,6 +7,15 @@ use App\Service\Contracts\MarketService;
 use App\Entity\{ Lot, Trade };
 use App\Request\Contracts\{ AddLotRequest, BuyLotRequest };
 use App\Response\Contracts\LotResponse;
+use App\Response\CustomLotResponse;
+use App\Jobs\SendEmail;
+use App\Repository\Contracts\{
+    LotRepository,
+    TradeRepository,
+    WalletRepository,
+    MoneyRepository,
+    UserRepository
+};
 use App\Exceptions\MarketException\{
     ActiveLotExistsException,
     IncorrectPriceException,
@@ -17,9 +26,6 @@ use App\Exceptions\MarketException\{
     BuyInactiveLotException,
     LotDoesNotExistException
 };
-use Illuminate\Support\Facades\Mail;
-use App\Mail\TradeCreated;
-
 
 class HandleMarket implements MarketService
 {
@@ -119,7 +125,7 @@ class HandleMarket implements MarketService
         if ($lotRequest->getAmount() < 1) {
             throw new BuyNegativeAmountException('You must buy at least one unit of currency.');
         }
-
+        
         if (now()->timestamp > $lot->getDateTimeClose()) {
             throw new BuyInactiveLotException('You cannot buy from a closed lot.');
         }
@@ -135,11 +141,13 @@ class HandleMarket implements MarketService
         $trade->user_id = $lotRequest->getUserId();
         $trade->amount  = $lotRequest->getAmount();
 
-        $seller = $$this->userRepo->getById($lot->seller_id);
+        $seller = $this->userRepo->getById($lot->seller_id);
 
-        Mail::to($seller)->send(new TradeCreated($trade, $seller));
+        $savedTrade = $this->tradeRepo->add($trade);
         
-        return $this->tradeRepo->add($trade);
+        SendEmail::dispatch($savedTrade, $seller);
+        
+        return $savedTrade;
     }
 
     /**
@@ -159,7 +167,7 @@ class HandleMarket implements MarketService
             throw new LotDoesNotExistException('The requested lot does not exists.');
         }
 
-        return new LotResponse($lot);
+        return new CustomLotResponse($lot, $this->walletRepo, $this->moneyRepo);
     }
 
     /**
@@ -172,7 +180,7 @@ class HandleMarket implements MarketService
         $lots = [];
 
         foreach ($this->lotRepo->findAll() as $lot) {
-            $lots[] = new LotResponse($lot);
+            $lots[] = new CustomLotResponse($lot, $this->walletRepo, $this->moneyRepo);
         }
 
         return $lots;

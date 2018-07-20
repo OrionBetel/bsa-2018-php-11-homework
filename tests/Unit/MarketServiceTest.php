@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
-use Carbon\Carbon;
 use App\User;
-use App\Entity\{ Currency, Lot, Money, Wallet };
-use App\Request\Contracts\{ AddLotRequest, BuyLotRequest };
-use App\Response\Contracts\LotResponse;
+use App\Entity\{ Currency, Lot, Money, Wallet, Trade };
+use App\Request\{ AddLot, BuyLot };
+use App\Response\CustomLotResponse;
+use Illuminate\Support\Facades\Mail;
 use App\Mail\TradeCreated;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Service\Contracts\{
@@ -14,6 +14,7 @@ use App\Service\Contracts\{
     WalletService,
     MarketService
 };
+use App\Service\HandleMarket;
 use App\Repository\Contracts\{
     CurrencyRepository,
     UserRepository,
@@ -21,6 +22,14 @@ use App\Repository\Contracts\{
     MoneyRepository,
     TradeRepository,
     LotRepository
+};
+use App\Repository\{
+    DatabaseCurrencyRepository,
+    DatabaseUserRepository,
+    DatabaseWalletRepository,
+    DatabaseMoneyRepository,
+    DatabaseTradeRepository,
+    DatabaseLotRepository
 };
 use App\Exceptions\MarketException\{
     ActiveLotExistsException,
@@ -32,6 +41,7 @@ use App\Exceptions\MarketException\{
     BuyInactiveLotException,
     LotDoesNotExistException
 };
+
 use Tests\TestCase;
 
 class MarketServiceTest extends TestCase
@@ -44,56 +54,80 @@ class MarketServiceTest extends TestCase
     {
         parent::setUp();
 
-        $lotRepositoryStub    = $this->createMock(LotRepository::class);
-        $tradeRepositoryStub  = $this->createMock(TradeRepository::class);
-        $walletRepositoryStub = $this->createMock(WalletRepository::class);
-        $moneyRepositoryStub  = $this->createMock(MoneyRepository::class);
-        $userRepositoryStub   = $this->createMock(UserRepository::class);
+        $lotRepositoryStub    = $this->createMock(DatabaseLotRepository::class);
+        $tradeRepositoryStub  = $this->createMock(DatabaseTradeRepository::class);
+        $walletRepositoryStub = $this->createMock(DatabaseWalletRepository::class);
+        $moneyRepositoryStub  = $this->createMock(DatabaseMoneyRepository::class);
+        $userRepositoryStub   = $this->createMock(DatabaseUserRepository::class);
+        $currencyRepositoryStub   = $this->createMock(DatabaseCurrencyRepository::class);
 
-        $lotRepositoryStub->method('getAll')->willReturn([
-            factory(Lot::class)-make(),
-            factory(Lot::class)-make(),
-            factory(Lot::class)-make(),
-            factory(Lot::class)-make(),
+        $currencyRepositoryStub->method('add')->willReturn(
+            factory(Currency::class)->create([
+                'id' => 1
+            ])
+        );
+
+        $userRepositoryStub->method('getById')->willReturn(
+            factory(User::class)->create([
+                'id' => 1
+            ])
+        );
+        
+        $lotRepositoryStub->method('findAll')->willReturn([
+            factory(Lot::class)->make(),
+            factory(Lot::class)->make(),
+            factory(Lot::class)->make(),
+            factory(Lot::class)->make(),
         ]);
 
-        $tradeRepositoryStub->method('getAll')->willReturn([
-            factory(Trade::class)-make(),
-            factory(Trade::class)-make(),
-            factory(Trade::class)-make(),
-            factory(Trade::class)-make(),
-        ]);
+        $lotRepositoryStub->method('add')->willReturn(
+            factory(Lot::class)->create([
+                'currency_id' => 1,
+                'seller_id'   => 1,
+                'price'       => 123.45,
+            ])
+        );
+        
+        $lotRepositoryStub->method('getById')->will($this->returnValueMap([
+            [1, factory(Lot::class)->make([
+                'currency_id'     => 1,
+                'seller_id'       => 1,
+                'price'           => 123.45,
+                'date_time_open'  => (now()->timestamp - 1000),
+                'date_time_close' => (now()->timestamp - 100)
+            ])],
+            [2, null],
+            [3, factory(Lot::class)->make([
+                'currency_id'     => 1,
+                'seller_id'       => 1,
+                'price'           => 123.45,
+            ])],
+        ]));
 
-        $walletRepositoryStub->method('getAll')->willReturn([
-            factory(Wallet::class)-make(),
-            factory(Wallet::class)-make(),
-            factory(Wallet::class)-make(),
-            factory(Wallet::class)-make(),
-        ]);
+        $lotRepositoryStub->method('findActiveLot')->will($this->onConsecutiveCalls(
+            null,
+            factory(Lot::class)->make([
+                'currency_id' => 1,
+                'seller_id'   => 1,
+                'price'       => 123.45
+            ])
+        ));
 
-        $moneyRepositoryStub->method('getAll')->willReturn([
-            factory(Money::class)-make([
-                'amount' => 1.0
-            ]),
-            factory(Money::class)-make([
-                'amount' => 1.0
-            ]),
-            factory(Money::class)-make([
-                'amount' => 1.0
-            ]),
-            factory(Money::class)-make([
-                'amount' => 1.0
-            ]),
-        ]);
+        $walletRepositoryStub->method('findByUser')->willReturn(
+            factory(Wallet::class)->make([
+                'id' => 1,
+            ])
+        );
 
-        $userRepositoryStub->method('getAll')->willReturn([
-            factory(User::class)-make(),
-            factory(User::class)-make(),
-            factory(User::class)-make(),
-            factory(User::class)-make(),
-        ]);
+        $moneyRepositoryStub->method('findByWalletAndCurrency')->willReturn(
+            factory(Money::class)->make()
+        );
 
-        $this->marketService = new MarketService(
+        $tradeRepositoryStub->method('add')->willReturn(
+            factory(Trade::class)->make()
+        );
+
+        $this->marketService = new HandleMarket(
             $lotRepositoryStub,
             $tradeRepositoryStub,
             $walletRepositoryStub,
@@ -106,7 +140,7 @@ class MarketServiceTest extends TestCase
     {
         $this->expectException(ActiveLotExistsException::class);
         
-        $this->marketService->addLot(new AddLotRequest(
+        $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -114,7 +148,7 @@ class MarketServiceTest extends TestCase
             123.45
         ));
 
-        $this->marketService->addLot(new AddLotRequest(
+        $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -127,7 +161,7 @@ class MarketServiceTest extends TestCase
     {
         $this->expectException(IncorrectTimeCloseException::class);
 
-        $this->marketService->addLot(new AddLotRequest(
+        $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -140,7 +174,7 @@ class MarketServiceTest extends TestCase
     {
         $this->expectException(IncorrectPriceException::class);
 
-        $this->marketService->addLot(new AddLotRequest(
+        $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -151,7 +185,7 @@ class MarketServiceTest extends TestCase
 
     public function testAddLot()
     {   
-        $lot = $this->marketService->addLot(new AddLotRequest(
+        $lot = $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -172,7 +206,7 @@ class MarketServiceTest extends TestCase
     {
         $this->expectException(BuyOwnCurrencyException::class);
 
-        $lot = $this->marketService->addLot(new AddLotRequest(
+        $lot = $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -180,14 +214,14 @@ class MarketServiceTest extends TestCase
             123.45
         ));
 
-        $this->marketService->buyLot(new BuyLotRequest(1, 1, 1));
+        $this->marketService->buyLot(new BuyLot(1, 1, 1));
     }
 
     public function testBuyMoreThanExists()
     {
         $this->expectException(IncorrectLotAmountException::class);
 
-        $lot = $this->marketService->addLot(new AddLotRequest(
+        $lot = $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -195,14 +229,14 @@ class MarketServiceTest extends TestCase
             123.45
         ));
 
-        $this->marketService->buyLot(new BuyLotRequest(1, 2, 2));
+        $this->marketService->buyLot(new BuyLot(2, 1, 1000000000));
     }
 
     public function testBuyNegativeAmount()
     {
         $this->expectException(BuyNegativeAmountException::class);
 
-        $lot = $this->marketService->addLot(new AddLotRequest(
+        $lot = $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
@@ -210,64 +244,74 @@ class MarketServiceTest extends TestCase
             123.45
         ));
 
-        $this->marketService->buyLot(new BuyLotRequest(1, 2, -1));
+        $this->marketService->buyLot(new BuyLot(2, 1, -1));
     }
 
     public function testBuyInactiveLot()
     {
         $this->expectException(BuyInactiveLotException::class);
 
-        $lot = $this->marketService->addLot(new AddLotRequest(
+        $lot = $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
-            (now()->timestamp + 10),
+            (now()->timestamp + 5),
             123.45
         ));
 
-        sleep(11);
+        sleep(10);
 
-        $this->marketService->buyLot(new BuyLotRequest(1, 2, 1));
+        $this->marketService->buyLot(new BuyLot(2, 1, 1));
     }
 
     public function testBuyLot()
     {
-        $lot = $this->marketService->addLot(new AddLotRequest(
+        $lot = $this->marketService->addLot(new AddLot(
             1,
             1,
             now()->timestamp,
-            (now()->timestamp + 10),
+            (now()->timestamp + 3600),
             123.45
         ));
 
-        $trade = $this->marketService->buyLot(new BuyLotRequest(1, 2, 1));
+        $trade = $this->marketService->buyLot(new BuyLot(2, 3, 1));
 
         $this->assertNotNull($trade);
         $this->assertInstanceOf(Trade::class, $trade);
 
         Mail::fake();
-        Mail::assertSent(TradeCreated::class, 1);
-
-        $this->assertDatabaseHas('trades', [
-            'lot_id'  => 1,
-            'user_id' => 1,
-            'amount'  => 1
-        ]);
+        Mail::queue(TradeCreated::class);
     }
 
     public function testGetNonexistentLot()
     {
+        $this->marketService->addLot(new AddLot(
+            1,
+            1,
+            now()->timestamp,
+            (now()->timestamp + 3600),
+            123.45
+        ));
+        
         $this->expectException(LotDoesNotExistException::class);
 
-        $lot = $this->marketService->getLot(-1);
+        $lot = $this->marketService->getLot(2);
     }
     
     public function testGetLot()
     {
+        $this->marketService->addLot(new AddLot(
+            1,
+            1,
+            now()->timestamp,
+            (now()->timestamp + 3600),
+            123.45
+        ));
+        
         $lot = $this->marketService->getLot(1);
 
         $this->assertNotNull($lot);
-        $this->assertInstanceOf(LotResponse::class, $lot);
+        $this->assertInstanceOf(CustomLotResponse::class, $lot);
     }
     
     public function testGetLotList()
@@ -275,6 +319,6 @@ class MarketServiceTest extends TestCase
         $lotList = $this->marketService->getLotList();
 
         $this->assertInternalType('array', $lotList);
-        $this->assertContainsOnlyInstancesOf(LotResponse::class, $lotList);
+        $this->assertContainsOnlyInstancesOf(CustomLotResponse::class, $lotList);
     }
 }

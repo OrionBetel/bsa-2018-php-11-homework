@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'driver' => env('MAIL_DRIVER', 'smtp'),
+    'driver' => env('MAIL_DRIVER', 'log'),
 
     /*
     |--------------------------------------------------------------------------
@@ -118,10 +118,5 @@ return [
         'paths' => [
             resource_path('views/vendor/mail'),
         ],
-    ],
-
-    'to' => [
-        'address' => 'sandrokharchenko@gmail.com',
-        'name' => 'Alexander Kharchenko'
     ],
 ];
