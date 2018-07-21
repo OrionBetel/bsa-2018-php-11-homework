@@ -36,11 +36,11 @@ class User extends Authenticatable
     
     public function lots()
     {
-        $this->hasMany(Lot::class);
+        return $this->hasMany(Lot::class);
     }
 
     public function trades()
     {
-        $this->hasMany(Trade::class);
+        return $this->hasMany(Trade::class);
     }
 }

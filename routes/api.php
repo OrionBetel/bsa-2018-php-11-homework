@@ -22,3 +22,6 @@ Route::post('v1/lots', 'LotsController@addLot')
 
 Route::post('v1/trades', 'TradesController@buyCurrency')
      ->name('buyCurrency');
+
+Route::get('v1/lots/{id}', 'LotsController@getLot')
+     ->name('getLot');

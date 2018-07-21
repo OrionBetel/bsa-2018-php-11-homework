@@ -165,7 +165,7 @@ class HandleMarket implements MarketService
         $lot = $this->lotRepo->getById($id);
 
         if (is_null($lot)) {
-            throw new LotDoesNotExistException('The requested lot does not exists.');
+            throw new LotDoesNotExistException('The requested lot does not exist.');
         }
 
         return new CustomLotResponse($lot, $this->walletRepo, $this->moneyRepo);

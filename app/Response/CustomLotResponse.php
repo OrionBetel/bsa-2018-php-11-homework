@@ -31,17 +31,17 @@ class CustomLotResponse implements LotResponse
      */
     public function getId() : int
     {
-        return $lot->id;
+        return $this->lot->id;
     }
 
     public function getUserName() : string
     {
-        return $lot->user->name;
+        return $this->lot->user->name;
     }
 
     public function getCurrencyName() : string
     {
-        return $lot->currency->name;
+        return $this->lot->currency->name;
     }
 
     /**
@@ -51,11 +51,11 @@ class CustomLotResponse implements LotResponse
      */
     public function getAmount() : float
     {
-        $currency = $lot->currency;
-        $wallet = $this->walletRepository->findByUser($lot->seller_id);
+        $currency = $this->lot->currency;
+        $wallet = $this->walletRepository->findByUser($this->lot->seller_id);
         
         $money = $this->moneyRepository->findByWalletAndCurrency($wallet->id, $currency->id);
-        
+
         return $money->amount;
     }
 
@@ -66,7 +66,7 @@ class CustomLotResponse implements LotResponse
      */
     public function getDateTimeOpen() : string
     {
-        return Carbon::createFromTimestamp($lot->getDateTimeOpen())->format('Y/m/d H:i:s');
+        return Carbon::createFromTimestamp($this->lot->getDateTimeOpen())->format('Y/m/d H:i:s');
     }
 
     /**
@@ -76,7 +76,7 @@ class CustomLotResponse implements LotResponse
      */
     public function getDateTimeClose() : string
     {
-        return Carbon::createFromTimestamp($lot->getDateTimeClose())->format('Y/m/d H:i:s');
+        return Carbon::createFromTimestamp($this->lot->getDateTimeClose())->format('Y/m/d H:i:s');
     }
 
     /**
@@ -88,6 +88,6 @@ class CustomLotResponse implements LotResponse
      */
     public function getPrice() : string
     {
-        return number_format($lot->price, 2, ',', ' ');
+        return number_format($this->lot->price, 2, ',', ' ');
     }
 }

@@ -11,6 +11,7 @@ use App\Service\Contracts\MarketService;
 use Illuminate\Http\Request;
 use App\Request\Contracts\AddLotRequest;
 use App\Request\AddLot;
+use App\Response\Contracts\LotResponse;
 use App\Http\Controllers\Controller;
 
 class LotsController extends Controller
@@ -70,5 +71,29 @@ class LotsController extends Controller
             'message'     => 'Lot was added.',
             'status_code' => 201
         ], 201);
+    }
+
+    public function getLot(int $id)
+    {
+        try {
+            $lot = $this->marketService->getLot($id);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => [
+                    'message'     => $e->getMessage(),
+                    'status_code' => 400
+                ]
+            ], 400);
+        }
+
+        return response()->json([
+            'id'              => $lot->getId(),
+            'user_name'       => $lot->getUserName(),
+            'currency_name'   => $lot->getCurrencyName(),
+            'amount'          => $lot->getAmount(),
+            'date_time_open'  => $lot->getDateTimeOpen(),
+            'date_time_close' => $lot->getDateTimeClose(),
+            'price'           => $lot->getPrice(),
+        ], 200);
     }
 }
