@@ -5,15 +5,12 @@ namespace App\Http\Controllers;
 use Auth;
 use Gate;
 use Validator;
-use App\User;
-use App\Entity\Lot;
-use App\Service\Contracts\MarketService;
 use Illuminate\Http\Request;
-use App\Request\Contracts\AddLotRequest;
-use App\Request\AddLot;
-use App\Http\Controllers\Controller;
+use App\Service\Contracts\MarketService;
+use App\Request\BuyLot;
+use App\Entity\Trade;
 
-class LotsController extends Controller
+class TradesController extends Controller
 {
     protected $marketService;
 
@@ -22,22 +19,20 @@ class LotsController extends Controller
         $this->marketService = $marketService;
     }
     
-    public function addLot(Request $request)
+    public function buyCurrency(Request $request)
     {
-        if (Gate::denies('create', Lot::class)) {
+        if (Gate::denies('create', Trade::class)) {
             return response()->json([
                 'error' => [
-                    'message'     => 'Only authenticated users can add lots.',
+                    'message'     => 'Only authenticated users can buy currency.',
                     'status_code' => 403
                 ]
             ], 403);
         }
 
         $validator = Validator::make($request->all(), [
-            'currency_id'     => 'required|integer|exists:currencies,id',
-            'date_time_open'  => 'required|integer',
-            'date_time_close' => 'required|integer',
-            'price'           => 'required|numeric'
+            'lot_id' => 'required|integer|exists:lots,id',
+            'amount' => 'required|numeric'
         ]);
 
         if ($validator->fails()) {
@@ -48,14 +43,12 @@ class LotsController extends Controller
                 ]
             ], 400);
         }
-        
+
         try {
-            $this->marketService->addLot(new AddLot(
-                $request->input('currency_id'),
+            $this->marketService->buyLot(new BuyLot(
                 Auth::id(),
-                $request->input('date_time_open'),
-                $request->input('date_time_close'),
-                $request->input('price')
+                $request->input('lot_id'),
+                $request->input('amount')
             ));
         } catch (\Exception $e) {
             return response()->json([
@@ -67,7 +60,7 @@ class LotsController extends Controller
         }
         
         return response()->json([
-            'message'     => 'Lot was added.',
+            'message'     => 'Currency was bought.',
             'status_code' => 201
         ], 201);
     }

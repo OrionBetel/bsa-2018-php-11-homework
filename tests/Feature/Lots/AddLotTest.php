@@ -135,7 +135,7 @@ class AddLotTest extends TestCase
             'price'           => 123.45
         ]);
 
-        $response->assertStatus(200)
+        $response->assertStatus(201)
                  ->assertHeader('Content-Type', 'application/json')
                  ->assertJsonStructure([
                     'message',
