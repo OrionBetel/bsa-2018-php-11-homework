@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Service\Contracts\MarketService;
 
+use Carbon\Carbon;
 use App\Entity\{ Lot, Trade };
 use App\Request\Contracts\{ AddLotRequest, BuyLotRequest };
 use App\Response\Contracts\LotResponse;
@@ -73,20 +74,20 @@ class HandleMarket implements MarketService
         
         if ($lotRequest->getDateTimeClose() < $lotRequest->getDateTimeOpen()) {
             throw new IncorrectTimeCloseException(
-                'The close date and time of your sell session cannot be less then the open date and time'
+                'The close date and time of your sell session cannot be less then the open date and time.'
             );
         }
         
         if ($lotRequest->getPrice() < 0) {
-            throw new IncorrectPriceException('Price of lot cannot be negative.');
+            throw new IncorrectPriceException('Lot price cannot be negative.');
         }
         
         $lot = new Lot;
         
         $lot->currency_id     = $lotRequest->getCurrencyId();
         $lot->seller_id       = $lotRequest->getSellerId();
-        $lot->date_time_open  = $lotRequest->getDateTimeOpen();
-        $lot->date_time_close = $lotRequest->getDateTimeClose();
+        $lot->date_time_open  = Carbon::createFromTimestamp($lotRequest->getDateTimeOpen())->toDateTimeString();
+        $lot->date_time_close = Carbon::createFromTimestamp($lotRequest->getDateTimeClose())->toDateTimeString();
         $lot->price           = $lotRequest->getPrice();
 
         return $this->lotRepo->add($lot);

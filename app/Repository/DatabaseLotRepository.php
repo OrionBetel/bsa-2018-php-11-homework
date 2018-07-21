@@ -9,7 +9,7 @@ class DatabaseLotRepository implements LotRepository
 {
     public function add(Lot $lot) : Lot
     {
-        $lot-save();
+        $lot->save();
 
         return $lot;
     }
