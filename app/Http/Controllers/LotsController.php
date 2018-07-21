@@ -96,4 +96,25 @@ class LotsController extends Controller
             'price'           => $lot->getPrice(),
         ], 200);
     }
+
+    public function getLots()
+    {
+        $lots = $this->marketService->getLotList();
+
+        $preparedLots = [];
+
+        foreach ($lots as $lot) {
+            $preparedLots[] = [
+                'id'              => $lot->getId(),
+                'user'            => $lot->getUserName(),
+                'currency'        => $lot->getCurrencyName(),
+                'amount'          => $lot->getAmount(),
+                'date_time_open'  => $lot->getDateTimeOpen(),
+                'date_time_close' => $lot->getDateTimeClose(),
+                'price'           => $lot->getPrice(),
+            ];
+        }
+
+        return response()->json($preparedLots);
+    }
 }
