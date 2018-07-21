@@ -6,7 +6,7 @@ use Auth;
 use Gate;
 use Validator;
 use App\User;
-use App\Entity\Lot;
+use App\Entity\{ Lot, Currency };
 use App\Service\Contracts\MarketService;
 use Illuminate\Http\Request;
 use App\Request\Contracts\AddLotRequest;
@@ -116,5 +116,14 @@ class LotsController extends Controller
         }
 
         return response()->json($preparedLots);
+    }
+
+    public function showAddForm()
+    {
+        $currencyNames = array_map(function ($currency) {
+            return $currency['name'];
+        }, Currency::all()->toArray());
+
+        return view('addLot', ['currencies' => $currencyNames]);
     }
 }
