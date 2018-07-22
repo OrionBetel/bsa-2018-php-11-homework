@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Auth;
 use Gate;
 use Validator;
+use Carbon\Carbon;
 use App\User;
 use App\Entity\{ Lot, Currency };
 use App\Service\Contracts\MarketService;
@@ -118,12 +119,55 @@ class LotsController extends Controller
         return response()->json($preparedLots);
     }
 
-    public function showAddForm()
+    public function showAddForm(string $errormsg = null)
     {
-        $currencyNames = array_map(function ($currency) {
-            return $currency['name'];
+        $currencies = array_map(function ($currency) {
+            return [
+                'id'   => $currency['id'],
+                'name' => $currency['name']
+            ];
         }, Currency::all()->toArray());
 
-        return view('addLot', ['currencies' => $currencyNames]);
+        return view('addLot', [
+            'currencies' => $currencies,
+            'errormsg'   => $errormsg,
+        ]);
+    }
+
+    public function addLotFromForm(Request $request)
+    {
+        if (Gate::denies('create', Lot::class)) {
+            return redirect('/');
+        }
+
+        // try {
+        //     $this->marketService->addLot(new AddLot(
+        //         $request->input('currency-id'),
+        //         Auth::id(),
+        //         Carbon::createFromFormat(
+        //             'Y-m-d H:i:s',
+        //             ($request->input('date-open') . ' ' . $request->input('time-open')))->timestamp,
+        //         Carbon::createFromFormat(
+        //             'Y-m-d H:i:s',
+        //             ($request->input('date-close') . ' ' . $request->input('time-close') . ':00'))->timestamp,
+        //         $request->input('price')
+        //     ));
+        // } catch (\Exception $e) {
+        //     return redirect()->action(
+        //         'LotsController@showAddForm', [
+        //             'errormsg' => 'Sorry, error has been occurred: ' . $e->getMessage(),
+        //         ]
+        //     );
+        // }
+
+        $this->marketService->addLot(new AddLot(
+            $request->input('currency-id'),
+            Auth::id(),
+            Carbon::parse($request->input('date-open') . ' ' . $request->input('time-open'))->timestamp,
+            Carbon::parse($request->input('date-close') . ' ' . $request->input('time-close'))->timestamp,
+            $request->input('price')
+        ));
+        
+        return response('Lot has been added successfully!');
     }
 }
